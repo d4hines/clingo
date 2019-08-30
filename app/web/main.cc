@@ -53,33 +53,35 @@ struct WebApp : Gringo::ClingoApp {
     }
 };
 
+extern "C" int run(char const *program, char const *options) {
+    try {
+#ifdef CLINGO_WITH_LUA
+        Gringo::g_scripts() = Gringo::Scripts();
+        clingo_register_lua_(nullptr);
+#endif
+        std::streambuf* orig = std::cin.rdbuf();
+        auto exit(Gringo::onExit([orig]{ std::cin.rdbuf(orig); }));
+        std::istringstream input(program);
+        std::cin.rdbuf(input.rdbuf());
+        std::vector<std::vector<char>> opts;
+        opts.emplace_back(std::initializer_list<char>{'c','l','i','n','g','o','\0'});
+        std::istringstream iss(options);
+        for (std::istream_iterator<std::string> it(iss), ie; it != ie; ++it) {
+            opts.emplace_back(it->c_str(), it->c_str() + it->size() + 1);
+        }
+        std::vector<char*> args;
+        for (auto &opt : opts) {
+            args.emplace_back(opt.data());
+        }
+        WebApp app;
+        args.emplace_back(nullptr);
+        return app.main(args.size()-2, args.data());
+    }
+    catch (ExitException const &e) {
+        return e.status();
+    }
+}
+  
 EMSCRIPTEN_BINDINGS(my_module) {
-  int run(char const *program, char const *options) {
-      try {
-  #ifdef CLINGO_WITH_LUA
-          Gringo::g_scripts() = Gringo::Scripts();
-          clingo_register_lua_(nullptr);
-  #endif
-          std::streambuf* orig = std::cin.rdbuf();
-          auto exit(Gringo::onExit([orig]{ std::cin.rdbuf(orig); }));
-          std::istringstream input(program);
-          std::cin.rdbuf(input.rdbuf());
-          std::vector<std::vector<char>> opts;
-          opts.emplace_back(std::initializer_list<char>{'c','l','i','n','g','o','\0'});
-          std::istringstream iss(options);
-          for (std::istream_iterator<std::string> it(iss), ie; it != ie; ++it) {
-              opts.emplace_back(it->c_str(), it->c_str() + it->size() + 1);
-          }
-          std::vector<char*> args;
-          for (auto &opt : opts) {
-              args.emplace_back(opt.data());
-          }
-          WebApp app;
-          args.emplace_back(nullptr);
-          return app.main(args.size()-2, args.data());
-      }
-      catch (ExitException const &e) {
-          return e.status();
-      }
-  }
+  function("run", &run);
 }
