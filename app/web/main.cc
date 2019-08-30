@@ -83,5 +83,9 @@ extern "C" int run(char const *program, char const *options) {
 }
   
 EMSCRIPTEN_BINDINGS(my_module) {
-  function("run", &run, allow_raw_pointers());
+  function("run", optional_override(
+    [](const std::string s) {
+      return bla(s.c_str());
+    }
+  ));
 }
