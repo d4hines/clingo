@@ -54,7 +54,7 @@ struct WebApp : Gringo::ClingoApp {
 };
 
 EMSCRIPTEN_BINDINGS(my_module) {
-  extern "C" int run(char const *program, char const *options) {
+  int run(char const *program, char const *options) {
       try {
   #ifdef CLINGO_WITH_LUA
           Gringo::g_scripts() = Gringo::Scripts();
