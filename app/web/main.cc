@@ -83,5 +83,5 @@ extern "C" int run(char const *program, char const *options) {
 }
   
 EMSCRIPTEN_BINDINGS(my_module) {
-  function("run", &run);
+  function("run", &run, allow_raw_pointers());
 }
